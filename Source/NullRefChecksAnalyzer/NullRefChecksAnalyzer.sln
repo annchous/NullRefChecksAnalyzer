@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NullRefChecksAnalyzer", "NullRefChecksAnalyzer\NullRefChecksAnalyzer\NullRefChecksAnalyzer.csproj", "{90358A4E-2411-4536-B503-8C9876252B7D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NullRefChecksAnalyzer.CodeFixes", "NullRefChecksAnalyzer\NullRefChecksAnalyzer.CodeFixes\NullRefChecksAnalyzer.CodeFixes.csproj", "{6706B605-4606-4AE4-9289-3F406540B798}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NullRefChecksAnalyzer.Package", "NullRefChecksAnalyzer\NullRefChecksAnalyzer.Package\NullRefChecksAnalyzer.Package.csproj", "{19895BE6-8265-468F-8963-C89E691D5249}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NullRefChecksAnalyzer.Test", "NullRefChecksAnalyzer\NullRefChecksAnalyzer.Test\NullRefChecksAnalyzer.Test.csproj", "{18EAA1D7-09FF-4EBB-AF19-367FCA83066B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NullRefChecksAnalyzer.Vsix", "NullRefChecksAnalyzer\NullRefChecksAnalyzer.Vsix\NullRefChecksAnalyzer.Vsix.csproj", "{5A262F77-C454-4EF3-8CB4-B39F993943B0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{90358A4E-2411-4536-B503-8C9876252B7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90358A4E-2411-4536-B503-8C9876252B7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90358A4E-2411-4536-B503-8C9876252B7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90358A4E-2411-4536-B503-8C9876252B7D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6706B605-4606-4AE4-9289-3F406540B798}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6706B605-4606-4AE4-9289-3F406540B798}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6706B605-4606-4AE4-9289-3F406540B798}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6706B605-4606-4AE4-9289-3F406540B798}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19895BE6-8265-468F-8963-C89E691D5249}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19895BE6-8265-468F-8963-C89E691D5249}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19895BE6-8265-468F-8963-C89E691D5249}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19895BE6-8265-468F-8963-C89E691D5249}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18EAA1D7-09FF-4EBB-AF19-367FCA83066B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18EAA1D7-09FF-4EBB-AF19-367FCA83066B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18EAA1D7-09FF-4EBB-AF19-367FCA83066B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18EAA1D7-09FF-4EBB-AF19-367FCA83066B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A262F77-C454-4EF3-8CB4-B39F993943B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A262F77-C454-4EF3-8CB4-B39F993943B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A262F77-C454-4EF3-8CB4-B39F993943B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A262F77-C454-4EF3-8CB4-B39F993943B0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5D3A964E-3D3B-4D1A-966F-E30CFA4E23EF}
+	EndGlobalSection
+EndGlobal
