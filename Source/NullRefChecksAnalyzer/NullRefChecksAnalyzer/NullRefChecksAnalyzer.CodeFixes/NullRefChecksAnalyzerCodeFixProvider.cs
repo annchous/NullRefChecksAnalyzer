@@ -20,7 +20,7 @@ namespace NullRefChecksAnalyzer
     {
         public sealed override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(NullRefChecksAnalyzerAnalyzer.DiagnosticId); }
+            get { return ImmutableArray.Create(NullRefChecksAnalyzer.DiagnosticId); }
         }
 
         public sealed override FixAllProvider GetFixAllProvider()

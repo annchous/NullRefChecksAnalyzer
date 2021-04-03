@@ -1,7 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
 using VerifyCS = NullRefChecksAnalyzer.Test.CSharpCodeFixVerifier<
-    NullRefChecksAnalyzer.NullRefChecksAnalyzerAnalyzer,
+    NullRefChecksAnalyzer.NullRefChecksAnalyzer,
     NullRefChecksAnalyzer.NullRefChecksAnalyzerCodeFixProvider>;
 
 namespace NullRefChecksAnalyzer.Test
