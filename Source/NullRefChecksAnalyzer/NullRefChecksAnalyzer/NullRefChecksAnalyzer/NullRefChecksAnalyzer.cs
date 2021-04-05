@@ -40,7 +40,7 @@ namespace NullRefChecksAnalyzer
         {
             var semanticModel = context.SemanticModel;
             var syntaxTree = semanticModel.SyntaxTree;
-            var methodDeclaration = (MethodDeclarationSyntax) context.Node;
+            var methodDeclaration = (MethodDeclarationSyntax)context.Node;
             foreach (var ifStatement in methodDeclaration.DescendantNodes().OfType<IfStatementSyntax>())
             {
                 var literalExpressions = ifStatement.Condition.DescendantNodes().OfType<LiteralExpressionSyntax>().ToList();
@@ -52,6 +52,21 @@ namespace NullRefChecksAnalyzer
                     defaultLiteralExpressions.ForEach(literalExpression => context.ReportDiagnostic(Diagnostic.Create(Rule, literalExpression.Parent.GetLocation())));
                 }
             }
+
+            foreach (var switchSection in methodDeclaration.DescendantNodes().OfType<SwitchSectionSyntax>())
+            {
+                var caseSwitchLabels = switchSection.Labels.OfType<CaseSwitchLabelSyntax>().ToList();
+                if (caseSwitchLabels.Any())
+                {
+                    var nullLiteralSwitchCases = GetNullSwitchCaseLiteralExpressions(caseSwitchLabels);
+                    nullLiteralSwitchCases.ForEach(nullLiteralSwitchCase => context.ReportDiagnostic(Diagnostic.Create(Rule, nullLiteralSwitchCase.GetLocation())));
+                }
+            }
+
+            foreach (var switchExpression in methodDeclaration.DescendantNodes().OfType<SwitchExpressionSyntax>())
+            {
+
+            }
         }
 
         private static List<LiteralExpressionSyntax>
@@ -61,5 +76,9 @@ namespace NullRefChecksAnalyzer
         private static List<LiteralExpressionSyntax>
             GetDefaultLiteralExpressions(List<LiteralExpressionSyntax> literalExpressions) => literalExpressions
             .Where(literalExpression => literalExpression.Kind() is SyntaxKind.DefaultLiteralExpression).ToList();
+
+        private static List<CaseSwitchLabelSyntax>
+            GetNullSwitchCaseLiteralExpressions(List<CaseSwitchLabelSyntax> caseSwitchLabels) => caseSwitchLabels
+            .Where(caseSwitchLabel => caseSwitchLabel.Value.Kind() is SyntaxKind.NullLiteralExpression).ToList();
     }
 }
