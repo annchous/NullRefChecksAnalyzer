@@ -47,7 +47,9 @@ namespace NullRefChecksAnalyzer
                 if (literalExpressions.Any())
                 {
                     var nullLiteralExpressions = GetNullLiteralExpressions(literalExpressions);
-                    nullLiteralExpressions.ForEach(literalExpression => context.ReportDiagnostic(Diagnostic.Create(Rule, literalExpression.Parent.GetLocation(), "Redundant null reference check.")));
+                    nullLiteralExpressions.ForEach(literalExpression => context.ReportDiagnostic(Diagnostic.Create(Rule, literalExpression.Parent.GetLocation())));
+                    var defaultLiteralExpressions = GetDefaultLiteralExpressions(literalExpressions);
+                    defaultLiteralExpressions.ForEach(literalExpression => context.ReportDiagnostic(Diagnostic.Create(Rule, literalExpression.Parent.GetLocation())));
                 }
             }
         }
@@ -55,5 +57,9 @@ namespace NullRefChecksAnalyzer
         private static List<LiteralExpressionSyntax>
             GetNullLiteralExpressions(List<LiteralExpressionSyntax> literalExpressions) => literalExpressions
             .Where(literalExpression => literalExpression.Kind() is SyntaxKind.NullLiteralExpression).ToList();
+
+        private static List<LiteralExpressionSyntax>
+            GetDefaultLiteralExpressions(List<LiteralExpressionSyntax> literalExpressions) => literalExpressions
+            .Where(literalExpression => literalExpression.Kind() is SyntaxKind.DefaultLiteralExpression).ToList();
     }
 }
