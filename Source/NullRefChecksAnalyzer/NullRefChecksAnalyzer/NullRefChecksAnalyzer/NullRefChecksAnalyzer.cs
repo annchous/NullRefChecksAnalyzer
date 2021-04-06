@@ -38,9 +38,25 @@ namespace NullRefChecksAnalyzer
 
         private static void AnalyzeNullChecks(SyntaxNodeAnalysisContext context)
         {
+            var cancellationToken = context.CancellationToken;
             var semanticModel = context.SemanticModel;
-            var syntaxTree = semanticModel.SyntaxTree;
             var methodDeclaration = (MethodDeclarationSyntax)context.Node;
+            var parameters = methodDeclaration.ParameterList.Parameters;
+
+            foreach (var parameter in parameters)
+            {
+                var type = context.SemanticModel.GetTypeInfo(parameter, cancellationToken).Type;
+                if (type?.IsReferenceType is false)
+                {
+                    parameters.Remove(parameter);
+                }
+            }
+
+            if (!parameters.Any())
+            {
+                return;
+            }
+
             foreach (var ifStatement in methodDeclaration.DescendantNodes().OfType<IfStatementSyntax>())
             {
                 var literalExpressions = ifStatement.Condition.DescendantNodes().OfType<LiteralExpressionSyntax>().ToList();
@@ -65,7 +81,12 @@ namespace NullRefChecksAnalyzer
 
             foreach (var switchExpression in methodDeclaration.DescendantNodes().OfType<SwitchExpressionSyntax>())
             {
-
+                var constantPatterns = switchExpression.DescendantNodes().OfType<ConstantPatternSyntax>().ToList();
+                if (constantPatterns.Any())
+                {
+                    var nullLiteralPatterns = GetNullSwitchExpressionLiteralExpressions(constantPatterns);
+                    nullLiteralPatterns.ForEach(nullLiteralPattern => context.ReportDiagnostic(Diagnostic.Create(Rule, nullLiteralPattern.Parent.GetLocation())));
+                }
             }
         }
 
@@ -80,5 +101,9 @@ namespace NullRefChecksAnalyzer
         private static List<CaseSwitchLabelSyntax>
             GetNullSwitchCaseLiteralExpressions(List<CaseSwitchLabelSyntax> caseSwitchLabels) => caseSwitchLabels
             .Where(caseSwitchLabel => caseSwitchLabel.Value.Kind() is SyntaxKind.NullLiteralExpression).ToList();
+
+        private static List<ConstantPatternSyntax>
+            GetNullSwitchExpressionLiteralExpressions(List<ConstantPatternSyntax> constantPatterns) => constantPatterns
+            .Where(constantPattern => constantPattern.Kind() is SyntaxKind.NullLiteralExpression).ToList();
     }
 }

@@ -13,7 +13,18 @@ namespace NullRefChecksAnalyzer.Test
         [TestMethod]
         public async Task TestMethod1()
         {
-            var test = @"";
+            var test = @"
+    using System;
+					
+    public class Program
+    {
+	    public static void Main(string[] args, int a)
+	    {
+		    if (args == null) {}
+		    string s = """";
+		    if (s == null) {}
+	    }
+    }";
 
             await VerifyCS.VerifyAnalyzerAsync(test);
         }
@@ -24,17 +35,15 @@ namespace NullRefChecksAnalyzer.Test
         {
             var test = @"
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Diagnostics;
-
-    namespace ConsoleApplication1
+					
+    public class Program
     {
-        class {|#0:TypeName|}
-        {   
-        }
+	    public static void Main(string[] args)
+	    {
+		    if (args == null) {}
+		    string s = """";
+		    if (s == null) {}
+	    }
     }";
 
             var fixtest = @"
