@@ -17,9 +17,9 @@ namespace NullRefChecksAnalyzer.Test
 					
 public class Program
 {
-	public static void Main(string[] args)
+	public static void Main(string[] args, int b)
 	{
-		args?.ToString();
+		if (args == null || b == 1) { }
 	}
 }";
 

@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace NullRefChecksAnalyzer
 {
@@ -54,12 +53,12 @@ namespace NullRefChecksAnalyzer
 
         private static void AnalyzeNodeParameters(List<ParameterSyntax> parameters, SyntaxNodeAnalysisContext context)
         {
-            var binaryExpressions = GetExpressions<BinaryExpressionSyntax>(context.SemanticModel, context.CancellationToken).ToList();
+            var binaryExpressions = GetExpressions<BinaryExpressionSyntax>(context.SemanticModel, context.CancellationToken).FilterForEqualityCheck().ToList();
             var isPatternExpressions = GetExpressions<IsPatternExpressionSyntax>(context.SemanticModel, context.CancellationToken).ToList();
             var caseExpressions = GetExpressions<SwitchStatementSyntax>(context.SemanticModel, context.CancellationToken).ToList();
             var switchExpressions = GetExpressions<SwitchExpressionSyntax>(context.SemanticModel, context.CancellationToken).ToList();
             var conditionalAccessExpressions = GetExpressions<ConditionalAccessExpressionSyntax>(context.SemanticModel, context.CancellationToken).ToList();
-            
+
             binaryExpressions.ForEach(binaryExpression => ReportForNullRefChecks(binaryExpression, parameters, context));
             isPatternExpressions.ForEach(isPatternExpression => ReportForNullRefChecks(isPatternExpression, parameters, context));
             caseExpressions.ForEach(caseExpression => ReportForNullRefChecks(caseExpression, parameters, context));
@@ -77,7 +76,24 @@ namespace NullRefChecksAnalyzer
 
             Location location = Location.None;
 
-            if (expression is BinaryExpressionSyntax || expression is SwitchStatementSyntax)
+            if (expression is BinaryExpressionSyntax)
+            {
+                if (expression.Kind() is SyntaxKind.LogicalOrExpression)
+                {
+                    return;
+                }
+
+                if (expression.DescendantNodes().OfType<LiteralExpressionSyntax>()
+                    .FirstOrDefault(literalExpression => literalExpression.IsNullOrDefault()) is null)
+                {
+                    return;
+                }
+
+                location = expression.DescendantNodes().OfType<LiteralExpressionSyntax>()
+                    .FirstOrDefault(literalExpression => literalExpression.IsNullOrDefault())?.Parent.GetLocation();
+            }
+
+            if (expression is SwitchStatementSyntax)
             {
                 if (expression.DescendantNodes().OfType<LiteralExpressionSyntax>()
                     .FirstOrDefault(literalExpression => literalExpression.IsNullOrDefault()) is null)
@@ -107,32 +123,5 @@ namespace NullRefChecksAnalyzer
 
             context.ReportDiagnostic(Diagnostic.Create(Rule, location));
         }
-    }
-
-    public static class NullRefChecksAnalyzerExtensions
-    {
-        public static IEnumerable<ParameterSyntax> WhereIsReferenceTypeParameter(this SeparatedSyntaxList<ParameterSyntax> parameters, SemanticModel semanticModel) =>
-            parameters.Where(parameter => semanticModel.GetDeclaredSymbol(parameter).Type != null)
-                .Where(parameter => semanticModel.GetDeclaredSymbol(parameter).Type.IsReferenceType);
-
-        public static IEnumerable<ParameterSyntax> GetReferenceTypeParameters(this BaseMethodDeclarationSyntax node,
-            SemanticModel semanticModel) => node.ParameterList.Parameters.WhereIsReferenceTypeParameter(semanticModel);
-
-        public static IEnumerable<ParameterSyntax> GetReferenceTypeParameters(this LocalFunctionStatementSyntax node, 
-            SemanticModel semanticModel) => node.ParameterList.Parameters.WhereIsReferenceTypeParameter(semanticModel);
-
-        public static bool IsParameterIdentifier(this IdentifierNameSyntax identifierName, SemanticModel semanticModel, 
-            IEnumerable<ParameterSyntax> parameters) => parameters.Any(parameter =>
-                semanticModel.GetDeclaredSymbol(parameter).Name.ToString() == identifierName.Identifier.ToString());
-
-        public static bool IsNullOrDefault(this LiteralExpressionSyntax literalExpression) =>
-            (literalExpression.Kind() is SyntaxKind.NullLiteralExpression ||
-             literalExpression.Kind() is SyntaxKind.DefaultLiteralExpression);
-
-        public static Location GetIsPatternExpressionLocation(this IsPatternExpressionSyntax patternExpression) =>
-            patternExpression.Pattern is RecursivePatternSyntax
-                ? patternExpression.GetLocation()
-                : patternExpression.DescendantNodes().OfType<LiteralExpressionSyntax>()
-                    .FirstOrDefault(literalExpression => literalExpression.IsNullOrDefault())?.Parent.GetLocation();
     }
 }
