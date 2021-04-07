@@ -19,7 +19,8 @@ public class Program
 {
 	public static void Main(string[] args, int b)
 	{
-		args?.ToString();
+		var x = args ?? throw new Exception();
+		var x = args ??= null;
 	}
 }";
 

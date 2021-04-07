@@ -16,6 +16,10 @@ namespace NullRefChecksAnalyzer
             patternExpressions.Where(patternExpression => patternExpression.Kind() is SyntaxKind.ConstantPattern ||
                                                           patternExpression.Kind() is SyntaxKind.RecursivePattern);
 
+        public static IEnumerable<CSharpSyntaxNode> FilterByCoalesce(this IEnumerable<CSharpSyntaxNode> expressions) =>
+            expressions.Where(expression => expression.Kind() is SyntaxKind.CoalesceExpression ||
+                                            expression.Kind() is SyntaxKind.CoalesceAssignmentExpression);
+
         public static IdentifierNameSyntax GetParentIdentifierName(this CSharpSyntaxNode expression)
         {
             IdentifierNameSyntax identifierName = expression.DescendantNodes().OfType<IdentifierNameSyntax>().FirstOrDefault();

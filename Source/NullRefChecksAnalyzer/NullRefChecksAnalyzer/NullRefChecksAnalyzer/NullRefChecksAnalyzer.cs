@@ -68,6 +68,9 @@ namespace NullRefChecksAnalyzer
             //var patternExpressions = GetExpressions<PatternSyntax>(context.SemanticModel, context.CancellationToken)
             //    .FilterByPatterns()
             //    .ToList();
+            var coalesceExpressions = GetExpressions<CSharpSyntaxNode>(context.SemanticModel, context.CancellationToken)
+                .FilterByCoalesce()
+                .ToList();
 
             binaryExpressions.ForEach(binaryExpression => ReportForNullRefChecks(binaryExpression, parameters, context));
             //isPatternExpressions.ForEach(isPatternExpression => ReportForNullRefChecks(isPatternExpression, parameters, context));
@@ -75,6 +78,7 @@ namespace NullRefChecksAnalyzer
             switchExpressions.ForEach(switchExpression => ReportForNullRefChecks(switchExpression, parameters, context));
             conditionalAccessExpressions.ForEach(conditionalAccessExpression => ReportForNullRefChecks(conditionalAccessExpression, parameters, context));
             //patternExpressions.ForEach(patternExpression => ReportForNullRefChecks(patternExpression, parameters, context));
+            coalesceExpressions.ForEach(coalesceExpression => ReportForNullRefChecks(coalesceExpression, parameters, context));
         }
 
         private static void ReportForNullRefChecks(CSharpSyntaxNode expression, List<ParameterSyntax> parameters, SyntaxNodeAnalysisContext context)
@@ -88,12 +92,20 @@ namespace NullRefChecksAnalyzer
 
             if (expression is BinaryExpressionSyntax binaryExpression)
             {
-                if (!binaryExpression.ContainsNullOrDefault())
+                if (expression.Kind() is SyntaxKind.CoalesceExpression)
                 {
-                    return;
+                    location = expression.DescendantTokens()
+                        .FirstOrDefault(token => token.Kind() is SyntaxKind.QuestionQuestionToken).GetLocation();
                 }
+                else
+                {
+                    if (!binaryExpression.ContainsNullOrDefault())
+                    {
+                        return;
+                    }
 
-                location = binaryExpression.GetLocation();
+                    location = binaryExpression.GetLocation();
+                }
             }
 
             if (expression is SwitchStatementSyntax switchStatement)
@@ -122,6 +134,12 @@ namespace NullRefChecksAnalyzer
             {
                 location = conditionalAccessExpression.DescendantTokens()
                     .FirstOrDefault(token => token.Kind() is SyntaxKind.QuestionToken).GetLocation();
+            }
+
+            if (expression.Kind() is SyntaxKind.CoalesceAssignmentExpression)
+            {
+                location = expression.DescendantTokens()
+                    .FirstOrDefault(token => token.Kind() is SyntaxKind.QuestionQuestionEqualsToken).GetLocation();
             }
 
             context.ReportDiagnostic(Diagnostic.Create(Rule, location));
