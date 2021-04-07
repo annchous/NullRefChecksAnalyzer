@@ -26,6 +26,10 @@ namespace NullRefChecksAnalyzer
             (literalExpression.Kind() is SyntaxKind.NullLiteralExpression ||
              literalExpression.Kind() is SyntaxKind.DefaultLiteralExpression);
 
+        public static bool ContainsNullOrDefault(this CSharpSyntaxNode expression) => !(expression.DescendantNodes()
+            .OfType<LiteralExpressionSyntax>()
+            .FirstOrDefault(literalExpression => literalExpression.IsNullOrDefault()) is null);
+
         public static Location GetIsPatternExpressionLocation(this IsPatternExpressionSyntax patternExpression) =>
             patternExpression.Pattern is RecursivePatternSyntax
                 ? patternExpression.GetLocation()
