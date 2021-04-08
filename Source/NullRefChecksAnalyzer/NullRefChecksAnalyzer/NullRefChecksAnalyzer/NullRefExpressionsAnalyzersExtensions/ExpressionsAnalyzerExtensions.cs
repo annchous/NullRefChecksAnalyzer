@@ -16,9 +16,11 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsAnalyzersExtensions
             patternExpressions.Where(patternExpression => patternExpression.Kind() is SyntaxKind.ConstantPattern ||
                                                           patternExpression.Kind() is SyntaxKind.RecursivePattern);
 
-        public static IEnumerable<SyntaxNode> FilterByCoalesce(this IEnumerable<SyntaxNode> expressions) =>
-            expressions.Where(expression => expression.Kind() is SyntaxKind.CoalesceExpression ||
-                                            expression.Kind() is SyntaxKind.CoalesceAssignmentExpression);
+        public static IEnumerable<BinaryExpressionSyntax> FilterByCoalesce(this IEnumerable<BinaryExpressionSyntax> expressions) =>
+            expressions.Where(expression => expression.Kind() is SyntaxKind.CoalesceExpression);
+
+        public static IEnumerable<AssignmentExpressionSyntax> FilterByCoalesceAssignment(this IEnumerable<AssignmentExpressionSyntax> expressions) =>
+            expressions.Where(expression => expression.Kind() is SyntaxKind.CoalesceAssignmentExpression);
 
         public static IdentifierNameSyntax GetParentIdentifierName(this SyntaxNode expression)
         {

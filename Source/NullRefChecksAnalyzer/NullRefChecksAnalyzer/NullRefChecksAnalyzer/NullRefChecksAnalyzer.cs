@@ -51,19 +51,23 @@ namespace NullRefChecksAnalyzer
 
         private static void AnalyzeNodeParameters(List<ParameterSyntax> parameters, SyntaxNode node, SyntaxNodeAnalysisContext context)
         {
-            var binaryExpressions = node.GetExpressions<BinaryExpressionSyntax>().FilterForEqualityCheck().ToList();
+            var binaryExpressions = node.GetExpressions<BinaryExpressionSyntax>().ToList();
             var caseExpressions = node.GetExpressions<SwitchStatementSyntax>().ToList();
             var switchExpressions = node.GetExpressions<SwitchExpressionSyntax>().ToList();
             var conditionalAccessExpressions = node.GetExpressions<ConditionalAccessExpressionSyntax>().ToList();
             var patternExpressions = node.GetExpressions<PatternSyntax>().FilterByPatterns().ToList();
-            var coalesceExpressions = node.GetExpressions<SyntaxNode>().FilterByCoalesce().ToList();
+            var coalesceAssignmentExpressions = node.GetExpressions<AssignmentExpressionSyntax>().FilterByCoalesceAssignment().ToList();
 
-            binaryExpressions.ForEach(binaryExpression => ReportForNullRefChecks(binaryExpression, parameters, context));
+            var equalityExpressions = binaryExpressions.FilterForEqualityCheck().ToList();
+            var coalesceExpressions = binaryExpressions.FilterByCoalesce().ToList();
+
+            equalityExpressions.ForEach(equalityExpression => ReportForNullRefChecks(equalityExpression, parameters, context));
+            coalesceExpressions.ForEach(coalesceExpression => ReportForNullRefChecks(coalesceExpression, parameters, context));
             caseExpressions.ForEach(caseExpression => ReportForNullRefChecks(caseExpression, parameters, context));
             switchExpressions.ForEach(switchExpression => ReportForNullRefChecks(switchExpression, parameters, context));
             conditionalAccessExpressions.ForEach(conditionalAccessExpression => ReportForNullRefChecks(conditionalAccessExpression, parameters, context));
             patternExpressions.ForEach(patternExpression => ReportForNullRefChecks(patternExpression, parameters, context));
-            coalesceExpressions.ForEach(coalesceExpression => ReportForNullRefChecks(coalesceExpression, parameters, context));
+            coalesceAssignmentExpressions.ForEach(coalesceAssignmentExpression => ReportForNullRefChecks(coalesceAssignmentExpression, parameters, context));
         }
 
         private static void ReportForNullRefChecks(SyntaxNode expression, List<ParameterSyntax> parameters, SyntaxNodeAnalysisContext context)
