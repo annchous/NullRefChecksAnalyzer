@@ -7,7 +7,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
-using Microsoft.CodeAnalysis.Text;
+using NullRefChecksAnalyzer.NullRefExpressionsAnalyzers;
+using NullRefChecksAnalyzer.NullRefExpressionsAnalyzersExtensions;
 
 namespace NullRefChecksAnalyzer
 {
@@ -38,111 +39,69 @@ namespace NullRefChecksAnalyzer
         {
             var methodDeclaration = (MethodDeclarationSyntax) context.Node;
             var parameters = methodDeclaration.GetReferenceTypeParameters(context.SemanticModel).ToList();
-            if (parameters.Any()) AnalyzeNodeParameters(parameters, context);
+            if (parameters.Any()) AnalyzeNodeParameters(parameters, methodDeclaration, context);
         }
 
         private static void AnalyzeConstructor(SyntaxNodeAnalysisContext context)
         {
-            var сonstructorDeclaration = (ConstructorDeclarationSyntax)context.Node;
-            var parameters = сonstructorDeclaration.GetReferenceTypeParameters(context.SemanticModel).ToList();
-            if (parameters.Any()) AnalyzeNodeParameters(parameters, context);
+            var constructorDeclaration = (ConstructorDeclarationSyntax) context.Node;
+            var parameters = constructorDeclaration.GetReferenceTypeParameters(context.SemanticModel).ToList();
+            if (parameters.Any()) AnalyzeNodeParameters(parameters, constructorDeclaration, context);
         }
 
-        private static IEnumerable<T> GetExpressions<T>(SemanticModel semanticModel,
-            CancellationToken cancellationToken) =>
-            semanticModel.SyntaxTree.GetRoot(cancellationToken).DescendantNodes().OfType<T>();
-
-        private static void AnalyzeNodeParameters(List<ParameterSyntax> parameters, SyntaxNodeAnalysisContext context)
+        private static void AnalyzeNodeParameters(List<ParameterSyntax> parameters, SyntaxNode node, SyntaxNodeAnalysisContext context)
         {
-            var binaryExpressions = GetExpressions<BinaryExpressionSyntax>(context.SemanticModel, context.CancellationToken)
-                .FilterForEqualityCheck()
-                .ToList();
-            //var isPatternExpressions = GetExpressions<IsPatternExpressionSyntax>(context.SemanticModel, context.CancellationToken)
-            //    .ToList();
-            var caseExpressions = GetExpressions<SwitchStatementSyntax>(context.SemanticModel, context.CancellationToken)
-                .ToList();
-            var switchExpressions = GetExpressions<SwitchExpressionSyntax>(context.SemanticModel, context.CancellationToken)
-                .ToList();
-            var conditionalAccessExpressions = GetExpressions<ConditionalAccessExpressionSyntax>(context.SemanticModel, context.CancellationToken)
-                .ToList();
-            //var patternExpressions = GetExpressions<PatternSyntax>(context.SemanticModel, context.CancellationToken)
-            //    .FilterByPatterns()
-            //    .ToList();
-            var coalesceExpressions = GetExpressions<CSharpSyntaxNode>(context.SemanticModel, context.CancellationToken)
-                .FilterByCoalesce()
-                .ToList();
+            var binaryExpressions = node.GetExpressions<BinaryExpressionSyntax>().FilterForEqualityCheck().ToList();
+            var caseExpressions = node.GetExpressions<SwitchStatementSyntax>().ToList();
+            var switchExpressions = node.GetExpressions<SwitchExpressionSyntax>().ToList();
+            var conditionalAccessExpressions = node.GetExpressions<ConditionalAccessExpressionSyntax>().ToList();
+            var patternExpressions = node.GetExpressions<PatternSyntax>().FilterByPatterns().ToList();
+            var coalesceExpressions = node.GetExpressions<SyntaxNode>().FilterByCoalesce().ToList();
 
             binaryExpressions.ForEach(binaryExpression => ReportForNullRefChecks(binaryExpression, parameters, context));
-            //isPatternExpressions.ForEach(isPatternExpression => ReportForNullRefChecks(isPatternExpression, parameters, context));
             caseExpressions.ForEach(caseExpression => ReportForNullRefChecks(caseExpression, parameters, context));
             switchExpressions.ForEach(switchExpression => ReportForNullRefChecks(switchExpression, parameters, context));
             conditionalAccessExpressions.ForEach(conditionalAccessExpression => ReportForNullRefChecks(conditionalAccessExpression, parameters, context));
-            //patternExpressions.ForEach(patternExpression => ReportForNullRefChecks(patternExpression, parameters, context));
+            patternExpressions.ForEach(patternExpression => ReportForNullRefChecks(patternExpression, parameters, context));
             coalesceExpressions.ForEach(coalesceExpression => ReportForNullRefChecks(coalesceExpression, parameters, context));
         }
 
-        private static void ReportForNullRefChecks(CSharpSyntaxNode expression, List<ParameterSyntax> parameters, SyntaxNodeAnalysisContext context)
+        private static void ReportForNullRefChecks(SyntaxNode expression, List<ParameterSyntax> parameters, SyntaxNodeAnalysisContext context)
         {
             if (!expression.GetParentIdentifierName().IsParameterIdentifier(context.SemanticModel, parameters))
             {
                 return;
             }
 
-            Location location = Location.None;
-
             if (expression is BinaryExpressionSyntax binaryExpression)
             {
-                if (expression.Kind() is SyntaxKind.CoalesceExpression)
-                {
-                    location = expression.DescendantTokens()
-                        .FirstOrDefault(token => token.Kind() is SyntaxKind.QuestionQuestionToken).GetLocation();
-                }
-                else
-                {
-                    if (!binaryExpression.ContainsNullOrDefault())
-                    {
-                        return;
-                    }
-
-                    location = binaryExpression.GetLocation();
-                }
+                new BinaryExpressionsAnalyzer(binaryExpression).ReportForNullRefChecks(context, Rule);
             }
 
             if (expression is SwitchStatementSyntax switchStatement)
             {
-                if (!switchStatement.ContainsNullOrDefault())
-                {
-                    return;
-                }
-
-                location = switchStatement.DescendantNodes().OfType<LiteralExpressionSyntax>()
-                    .FirstOrDefault(literalExpression => literalExpression.IsNullOrDefault())?.Parent?.GetLocation();
+                new SwitchStatementsAnalyzer(switchStatement).ReportForNullRefChecks(context, Rule);
             }
 
             if (expression is SwitchExpressionSyntax switchExpression)
             {
-                if (!switchExpression.ContainsNullOrDefault())
-                {
-                    return;
-                }
-
-                location = switchExpression.DescendantNodes().OfType<LiteralExpressionSyntax>()
-                    .FirstOrDefault(literalExpression => literalExpression.IsNullOrDefault())?.Parent?.Parent?.GetLocation();
+                new SwitchExpressionsAnalyzer(switchExpression).ReportForNullRefChecks(context, Rule);
             }
 
             if (expression is ConditionalAccessExpressionSyntax conditionalAccessExpression)
             {
-                location = conditionalAccessExpression.DescendantTokens()
-                    .FirstOrDefault(token => token.Kind() is SyntaxKind.QuestionToken).GetLocation();
+                new ConditionalAccessExpressionsAnalyzer(conditionalAccessExpression).ReportForNullRefChecks(context, Rule);
             }
 
-            if (expression.Kind() is SyntaxKind.CoalesceAssignmentExpression)
+            if (expression is AssignmentExpressionSyntax assignmentExpression)
             {
-                location = expression.DescendantTokens()
-                    .FirstOrDefault(token => token.Kind() is SyntaxKind.QuestionQuestionEqualsToken).GetLocation();
+                new AssignmentExpressionsAnalyzer(assignmentExpression).ReportForNullRefChecks(context, Rule);
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(Rule, location));
+            if (expression is PatternSyntax patternExpression)
+            {
+                new PatternExpressionsAnalyzer(patternExpression).ReportForNullRefChecks(context, Rule);
+            }
         }
     }
 }

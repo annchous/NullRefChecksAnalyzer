@@ -15,14 +15,18 @@ namespace NullRefChecksAnalyzer.Test
         {
             var test = @"using System;
 					
-public class Program
-{
-	public static void Main(string[] args, int b)
-	{
-		var x = args ?? throw new Exception();
-		var x = args ??= null;
-	}
-}";
+    public class Program
+    {
+        public Program(string a)
+        {
+            if (a == null || a == ""a"") { }
+        }
+
+        static void Main(string[] args, int b)
+        {
+            if (args == null) { }
+        }
+    }";
 
             await VerifyCS.VerifyAnalyzerAsync(test);
         }
