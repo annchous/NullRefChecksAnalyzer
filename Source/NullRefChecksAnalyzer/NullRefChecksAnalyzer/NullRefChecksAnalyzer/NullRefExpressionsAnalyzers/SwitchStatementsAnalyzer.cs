@@ -25,7 +25,10 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsAnalyzers
             Location = _switchStatement.DescendantNodes().OfType<LiteralExpressionSyntax>()
                 .FirstOrDefault(literalExpression => literalExpression.IsNullOrDefault())?.Parent?.GetLocation();
 
-            context.ReportDiagnostic(Diagnostic.Create(descriptor, Location));
+            if (Location != null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(descriptor, Location));
+            }
         }
     }
 }

@@ -22,17 +22,8 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsAnalyzersExtensions
         public static IEnumerable<AssignmentExpressionSyntax> FilterByCoalesceAssignment(this IEnumerable<AssignmentExpressionSyntax> expressions) =>
             expressions.Where(expression => expression.Kind() is SyntaxKind.CoalesceAssignmentExpression);
 
-        public static IdentifierNameSyntax GetParentIdentifierName(this SyntaxNode expression)
-        {
-            var parent = expression;
-            var identifierName = expression.DescendantNodes().OfType<IdentifierNameSyntax>().FirstOrDefault();
-            while (identifierName is null)
-            {
-                parent = parent?.Parent;
-                identifierName = parent?.DescendantNodes().OfType<IdentifierNameSyntax>().FirstOrDefault();
-            }
-
-            return identifierName;
-        }
+        public static IEnumerable<InvocationExpressionSyntax> FilterByInvocations(this IEnumerable<InvocationExpressionSyntax> expressions) => expressions.Where(expression => 
+            expression.DescendantNodes().OfType<IdentifierNameSyntax>().Any(identifierName => identifierName.Identifier.ToString() == "Equals") || 
+            expression.DescendantNodes().OfType<IdentifierNameSyntax>().Any(identifierName => identifierName.Identifier.ToString() == "ReferenceEquals"));
     }
 }

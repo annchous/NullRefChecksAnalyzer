@@ -28,5 +28,18 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsAnalyzersExtensions
         public static bool ContainsNullOrDefault(this SyntaxNode expression) => !(expression.DescendantNodes()
             .OfType<LiteralExpressionSyntax>()
             .FirstOrDefault(literalExpression => literalExpression.IsNullOrDefault()) is null);
+
+        public static IdentifierNameSyntax GetParentIdentifierName(this SyntaxNode expression)
+        {
+            var parent = expression;
+            var identifierName = expression.DescendantNodes().OfType<IdentifierNameSyntax>().FirstOrDefault();
+            while (identifierName is null)
+            {
+                parent = parent?.Parent;
+                identifierName = parent?.DescendantNodes().OfType<IdentifierNameSyntax>().FirstOrDefault();
+            }
+
+            return identifierName;
+        }
     }
 }

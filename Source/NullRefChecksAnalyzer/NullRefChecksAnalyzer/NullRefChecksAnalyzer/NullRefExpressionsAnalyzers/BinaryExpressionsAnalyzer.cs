@@ -34,7 +34,10 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsAnalyzers
                 Location = _binaryExpression.GetLocation();
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(descriptor, Location));
+            if (Location != null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(descriptor, Location));
+            }
         }
     }
 }
