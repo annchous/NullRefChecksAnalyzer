@@ -16,7 +16,10 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsAnalyzersExtensions
 
         public static IEnumerable<ParameterSyntax> GetReferenceTypeParameters(this BaseMethodDeclarationSyntax node,
             SemanticModel semanticModel) => node.ParameterList.Parameters.WhereIsReferenceTypeParameter(semanticModel);
-        
+
+        public static IEnumerable<ParameterSyntax> GetReferenceTypeParameters(this IndexerDeclarationSyntax node,
+            SemanticModel semanticModel) => node.ParameterList.Parameters.WhereIsReferenceTypeParameter(semanticModel);
+
         public static bool IsParameterIdentifier(this IdentifierNameSyntax identifierName, SemanticModel semanticModel,
             IEnumerable<ParameterSyntax> parameters) => parameters.Any(parameter =>
             ModelExtensions.GetDeclaredSymbol(semanticModel, parameter)?.Name.ToString() == identifierName.Identifier.ToString());
