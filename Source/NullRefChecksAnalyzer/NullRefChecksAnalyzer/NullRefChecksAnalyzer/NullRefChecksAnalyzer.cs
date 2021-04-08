@@ -33,6 +33,7 @@ namespace NullRefChecksAnalyzer
             
             context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
             context.RegisterSyntaxNodeAction(AnalyzeConstructor, SyntaxKind.ConstructorDeclaration);
+            context.RegisterSyntaxNodeAction(AnalyzeIndexer, SyntaxKind.IndexerDeclaration);
         }
 
         private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
@@ -47,6 +48,13 @@ namespace NullRefChecksAnalyzer
             var constructorDeclaration = (ConstructorDeclarationSyntax) context.Node;
             var parameters = constructorDeclaration.GetReferenceTypeParameters(context.SemanticModel).ToList();
             if (parameters.Any()) AnalyzeNodeParameters(parameters, constructorDeclaration, context);
+        }
+
+        private static void AnalyzeIndexer(SyntaxNodeAnalysisContext context)
+        {
+            var indexerDeclaration = (IndexerDeclarationSyntax)context.Node;
+            var parameters = indexerDeclaration.GetReferenceTypeParameters(context.SemanticModel).ToList();
+            if (parameters.Any()) AnalyzeNodeParameters(parameters, indexerDeclaration, context);
         }
 
         private static void AnalyzeNodeParameters(List<ParameterSyntax> parameters, SyntaxNode node, SyntaxNodeAnalysisContext context)
