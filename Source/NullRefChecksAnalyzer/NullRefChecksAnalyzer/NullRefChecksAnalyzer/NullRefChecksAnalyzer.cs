@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
+using NullRefChecksAnalyzer.NullRefExpressionsAnalyzers;
+using NullRefChecksAnalyzer.NullRefExpressionsAnalyzersExtensions;
 
 namespace NullRefChecksAnalyzer
 {
@@ -14,13 +16,11 @@ namespace NullRefChecksAnalyzer
     public class NullRefChecksAnalyzer : DiagnosticAnalyzer
     {
         public const string DiagnosticId = "NullRefChecksAnalyzer";
-
-        // You can change these strings in the Resources.resx file. If you do not want your analyzer to be localize-able, you can use regular strings for Title and MessageFormat.
-        // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Localizing%20Analyzers.md for more on localization
-        private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
-        private static readonly LocalizableString MessageFormat = new LocalizableResourceString(nameof(Resources.AnalyzerMessageFormat), Resources.ResourceManager, typeof(Resources));
-        private static readonly LocalizableString Description = new LocalizableResourceString(nameof(Resources.AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
-        private const string Category = "Naming";
+        
+        private static readonly LocalizableString Title = "Redundant null reference check";
+        private static readonly LocalizableString MessageFormat = "Redundant null reference check";
+        private static readonly LocalizableString Description = "Redundant null reference check";
+        private const string Category = "Syntax";
 
         private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
 
@@ -30,24 +30,81 @@ namespace NullRefChecksAnalyzer
         {
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
-
-            // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
-            // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
-            context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
+            
+            context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
+            context.RegisterSyntaxNodeAction(AnalyzeConstructor, SyntaxKind.ConstructorDeclaration);
         }
 
-        private static void AnalyzeSymbol(SymbolAnalysisContext context)
+        private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
         {
-            // TODO: Replace the following code with your own analysis, generating Diagnostic objects for any issues you find
-            var namedTypeSymbol = (INamedTypeSymbol)context.Symbol;
+            var methodDeclaration = (MethodDeclarationSyntax) context.Node;
+            var parameters = methodDeclaration.GetReferenceTypeParameters(context.SemanticModel).ToList();
+            if (parameters.Any()) AnalyzeNodeParameters(parameters, methodDeclaration, context);
+        }
 
-            // Find just those named type symbols with names containing lowercase letters.
-            if (namedTypeSymbol.Name.ToCharArray().Any(char.IsLower))
+        private static void AnalyzeConstructor(SyntaxNodeAnalysisContext context)
+        {
+            var constructorDeclaration = (ConstructorDeclarationSyntax) context.Node;
+            var parameters = constructorDeclaration.GetReferenceTypeParameters(context.SemanticModel).ToList();
+            if (parameters.Any()) AnalyzeNodeParameters(parameters, constructorDeclaration, context);
+        }
+
+        private static void AnalyzeNodeParameters(List<ParameterSyntax> parameters, SyntaxNode node, SyntaxNodeAnalysisContext context)
+        {
+            var binaryExpressions = node.GetExpressions<BinaryExpressionSyntax>().ToList();
+            var caseExpressions = node.GetExpressions<SwitchStatementSyntax>().ToList();
+            var switchExpressions = node.GetExpressions<SwitchExpressionSyntax>().ToList();
+            var conditionalAccessExpressions = node.GetExpressions<ConditionalAccessExpressionSyntax>().ToList();
+            var patternExpressions = node.GetExpressions<PatternSyntax>().FilterByPatterns().ToList();
+            var coalesceAssignmentExpressions = node.GetExpressions<AssignmentExpressionSyntax>().FilterByCoalesceAssignment().ToList();
+
+            var equalityExpressions = binaryExpressions.FilterForEqualityCheck().ToList();
+            var coalesceExpressions = binaryExpressions.FilterByCoalesce().ToList();
+
+            equalityExpressions.ForEach(equalityExpression => ReportForNullRefChecks(equalityExpression, parameters, context));
+            coalesceExpressions.ForEach(coalesceExpression => ReportForNullRefChecks(coalesceExpression, parameters, context));
+            caseExpressions.ForEach(caseExpression => ReportForNullRefChecks(caseExpression, parameters, context));
+            switchExpressions.ForEach(switchExpression => ReportForNullRefChecks(switchExpression, parameters, context));
+            conditionalAccessExpressions.ForEach(conditionalAccessExpression => ReportForNullRefChecks(conditionalAccessExpression, parameters, context));
+            patternExpressions.ForEach(patternExpression => ReportForNullRefChecks(patternExpression, parameters, context));
+            coalesceAssignmentExpressions.ForEach(coalesceAssignmentExpression => ReportForNullRefChecks(coalesceAssignmentExpression, parameters, context));
+        }
+
+        private static void ReportForNullRefChecks(SyntaxNode expression, List<ParameterSyntax> parameters, SyntaxNodeAnalysisContext context)
+        {
+            if (!expression.GetParentIdentifierName().IsParameterIdentifier(context.SemanticModel, parameters))
             {
-                // For all such symbols, produce a diagnostic.
-                var diagnostic = Diagnostic.Create(Rule, namedTypeSymbol.Locations[0], namedTypeSymbol.Name);
+                return;
+            }
 
-                context.ReportDiagnostic(diagnostic);
+            if (expression is BinaryExpressionSyntax binaryExpression)
+            {
+                new BinaryExpressionsAnalyzer(binaryExpression).ReportForNullRefChecks(context, Rule);
+            }
+
+            if (expression is SwitchStatementSyntax switchStatement)
+            {
+                new SwitchStatementsAnalyzer(switchStatement).ReportForNullRefChecks(context, Rule);
+            }
+
+            if (expression is SwitchExpressionSyntax switchExpression)
+            {
+                new SwitchExpressionsAnalyzer(switchExpression).ReportForNullRefChecks(context, Rule);
+            }
+
+            if (expression is ConditionalAccessExpressionSyntax conditionalAccessExpression)
+            {
+                new ConditionalAccessExpressionsAnalyzer(conditionalAccessExpression).ReportForNullRefChecks(context, Rule);
+            }
+
+            if (expression is AssignmentExpressionSyntax assignmentExpression)
+            {
+                new AssignmentExpressionsAnalyzer(assignmentExpression).ReportForNullRefChecks(context, Rule);
+            }
+
+            if (expression is PatternSyntax patternExpression)
+            {
+                new PatternExpressionsAnalyzer(patternExpression).ReportForNullRefChecks(context, Rule);
             }
         }
     }
