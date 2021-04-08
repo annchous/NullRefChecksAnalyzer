@@ -17,14 +17,11 @@ namespace NullRefChecksAnalyzer.Test
 					
     public class Program
     {
-        public Program(string a)
-        {
-            if (a == null || a == ""a"") { }
-        }
-
         static void Main(string[] args, int b)
         {
-            if (args == null) { }
+            var s = args.Equals(null);
+            if (ReferenceEquals(args, null) { }
+            if (ReferenceEquals(null, args) { }
         }
     }";
 

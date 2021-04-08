@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using NullRefChecksAnalyzer.NullRefExpressionsAnalyzersExtensions;
@@ -22,10 +23,13 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsAnalyzers
                 return;
             }
 
-            Location = _switchExpression.DescendantNodes().OfType<SwitchExpressionArmSyntax>()
-                .FirstOrDefault(caseSwitchLabel => caseSwitchLabel.ContainsNullOrDefault())?.GetLocation();
+            Location = _switchExpression.DescendantNodes().OfType<ConstantPatternSyntax>()
+                .FirstOrDefault(pattern => pattern.ContainsNullOrDefault())?.Parent?.GetLocation();
 
-            context.ReportDiagnostic(Diagnostic.Create(descriptor, Location));
+            if (Location != null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(descriptor, Location));
+            }
         }
     }
 }

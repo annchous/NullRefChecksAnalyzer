@@ -57,6 +57,7 @@ namespace NullRefChecksAnalyzer
             var conditionalAccessExpressions = node.GetExpressions<ConditionalAccessExpressionSyntax>().ToList();
             var patternExpressions = node.GetExpressions<PatternSyntax>().FilterByPatterns().ToList();
             var coalesceAssignmentExpressions = node.GetExpressions<AssignmentExpressionSyntax>().FilterByCoalesceAssignment().ToList();
+            var invocationExpressions = node.GetExpressions<InvocationExpressionSyntax>().FilterByInvocations().ToList();
 
             var equalityExpressions = binaryExpressions.FilterForEqualityCheck().ToList();
             var coalesceExpressions = binaryExpressions.FilterByCoalesce().ToList();
@@ -68,10 +69,17 @@ namespace NullRefChecksAnalyzer
             conditionalAccessExpressions.ForEach(conditionalAccessExpression => ReportForNullRefChecks(conditionalAccessExpression, parameters, context));
             patternExpressions.ForEach(patternExpression => ReportForNullRefChecks(patternExpression, parameters, context));
             coalesceAssignmentExpressions.ForEach(coalesceAssignmentExpression => ReportForNullRefChecks(coalesceAssignmentExpression, parameters, context));
+            invocationExpressions.ForEach(invocationExpression => ReportForNullRefChecks(invocationExpression, parameters, context));
         }
 
         private static void ReportForNullRefChecks(SyntaxNode expression, List<ParameterSyntax> parameters, SyntaxNodeAnalysisContext context)
         {
+            if (expression is InvocationExpressionSyntax invocationExpression)
+            {
+                new InvocationExpressionsAnalyzer(invocationExpression, parameters).ReportForNullRefChecks(context, Rule);
+                return;
+            }
+
             if (!expression.GetParentIdentifierName().IsParameterIdentifier(context.SemanticModel, parameters))
             {
                 return;

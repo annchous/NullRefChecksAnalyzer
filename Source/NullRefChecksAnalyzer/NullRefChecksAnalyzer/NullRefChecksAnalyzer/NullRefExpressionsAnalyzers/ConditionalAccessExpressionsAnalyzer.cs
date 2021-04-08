@@ -20,7 +20,10 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsAnalyzers
             Location = _conditionalAccessExpression.DescendantTokens()
                 .FirstOrDefault(token => token.Kind() is SyntaxKind.QuestionToken).GetLocation();
 
-            context.ReportDiagnostic(Diagnostic.Create(descriptor, Location));
+            if (Location != null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(descriptor, Location));
+            }
         }
     }
 }
