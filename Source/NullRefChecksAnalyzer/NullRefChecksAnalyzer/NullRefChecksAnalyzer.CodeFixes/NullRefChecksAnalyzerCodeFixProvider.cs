@@ -12,6 +12,7 @@ using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NullRefChecksAnalyzer.NullRefExpressionsCodeFixes;
 using NullRefChecksAnalyzer.NullRefExpressionsCodeFixesExtensions;
 
 namespace NullRefChecksAnalyzer
@@ -55,42 +56,19 @@ namespace NullRefChecksAnalyzer
         {
             var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
             SyntaxNode oldRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            SyntaxNode newRoot = null;
+            Document newDocument = null;
 
-            if (expression?.Parent is IfStatementSyntax ifStatement)
+            if (expression.Ancestors().Any(node => node is IfStatementSyntax))
             {
-                newRoot = oldRoot?.RemoveNode(ifStatement, SyntaxRemoveOptions.KeepNoTrivia);
+                newDocument = new IfStatementsCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
 
-            if (expression != null && expression.IsLogicalOrParent())
+            if (expression.Ancestors().Any(node => node is EqualsValueClauseSyntax))
             {
-                if (expression.Kind() is SyntaxKind.EqualsExpression)
-                {
-                    var secondExpression = expression?.Parent?.DescendantNodes().OfType<ExpressionSyntax>().FirstOrDefault(node => node?.Parent == expression.Parent && node != expression);
-                    newRoot = oldRoot?.ReplaceNode(expression.Parent, secondExpression);
-                    //newRoot = oldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression));
-                }
-
-                if (expression.Kind() is SyntaxKind.NotEqualsExpression)
-                {
-                    newRoot = oldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
-                }
+                newDocument = new EqualsValueClauseCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
 
-            if (expression?.Parent is EqualsValueClauseSyntax)
-            {
-                if (expression.Kind() is SyntaxKind.EqualsExpression)
-                {
-                    newRoot = oldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression));
-                }
-
-                if (expression.Kind() is SyntaxKind.NotEqualsExpression)
-                {
-                    newRoot = oldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
-                }
-            }
-
-            return newRoot == null ? document : document.WithSyntaxRoot(newRoot);
+            return newDocument;
         }
     }
 }

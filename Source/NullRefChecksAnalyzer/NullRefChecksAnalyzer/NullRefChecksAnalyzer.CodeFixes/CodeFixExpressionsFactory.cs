@@ -19,6 +19,26 @@ namespace NullRefChecksAnalyzer
                 return expressions.OfType<IsPatternExpressionSyntax>().First();
             }
 
+            if (expressions.OfType<ConditionalAccessExpressionSyntax>().FirstOrDefault() != null)
+            {
+                return expressions.OfType<ConditionalAccessExpressionSyntax>().First();
+            }
+
+            if (expressions.OfType<InvocationExpressionSyntax>().FirstOrDefault() != null)
+            {
+                return expressions.OfType<InvocationExpressionSyntax>().First();
+            }
+
+            if (expressions.OfType<CaseSwitchLabelSyntax>().FirstOrDefault() != null)
+            {
+                return expressions.OfType<CaseSwitchLabelSyntax>().First();
+            }
+
+            if (expressions.OfType<AssignmentExpressionSyntax>().FirstOrDefault() != null)
+            {
+                return expressions.OfType<AssignmentExpressionSyntax>().First();
+            }
+
             return null;
         }
     }

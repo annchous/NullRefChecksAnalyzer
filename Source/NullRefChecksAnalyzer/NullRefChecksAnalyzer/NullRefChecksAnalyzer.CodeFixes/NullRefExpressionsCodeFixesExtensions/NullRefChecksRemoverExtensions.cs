@@ -16,6 +16,7 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixesExtensions
             node?.Parent?.Kind() is SyntaxKind.LogicalAndExpression;
 
         public static bool IsLogicalNotParent(this SyntaxNode node) =>
-            node?.Parent?.Kind() is SyntaxKind.LogicalNotExpression;
+            node?.Parent?.Kind() is SyntaxKind.ParenthesizedExpression &&
+            node?.Parent?.Parent?.Kind() is SyntaxKind.LogicalNotExpression;
     }
 }
