@@ -12,6 +12,7 @@ using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NullRefChecksAnalyzer.NullRefExpressionsCodeFixesExtensions;
 
 namespace NullRefChecksAnalyzer
 {
@@ -38,34 +39,58 @@ namespace NullRefChecksAnalyzer
             var diagnosticSpan = diagnostic.Location.SourceSpan;
 
             // Find the type declaration identified by the diagnostic.
-            var declaration = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
+            var expression = root?.FindToken(diagnosticSpan.Start).Parent?.AncestorsAndSelf().ToList()
+                .FindExpression();
 
             // Register a code action that will invoke the fix.
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: CodeFixResources.CodeFixTitle,
-                    createChangedSolution: c => MakeUppercaseAsync(context.Document, declaration, c),
+                    title: "Remove redundant check",
+                    createChangedDocument: c => RemoveRedundantNullRefCheckAsync(context.Document, expression, c),
                     equivalenceKey: nameof(CodeFixResources.CodeFixTitle)),
                 diagnostic);
         }
 
-        private async Task<Solution> MakeUppercaseAsync(Document document, TypeDeclarationSyntax typeDecl, CancellationToken cancellationToken)
+        private async Task<Document> RemoveRedundantNullRefCheckAsync(Document document, SyntaxNode expression, CancellationToken cancellationToken)
         {
-            // Compute new uppercase name.
-            var identifierToken = typeDecl.Identifier;
-            var newName = identifierToken.Text.ToUpperInvariant();
-
-            // Get the symbol representing the type to be renamed.
             var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
-            var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl, cancellationToken);
+            SyntaxNode oldRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            SyntaxNode newRoot = null;
 
-            // Produce a new solution that has all references to that type renamed, including the declaration.
-            var originalSolution = document.Project.Solution;
-            var optionSet = originalSolution.Workspace.Options;
-            var newSolution = await Renamer.RenameSymbolAsync(document.Project.Solution, typeSymbol, newName, optionSet, cancellationToken).ConfigureAwait(false);
+            if (expression?.Parent is IfStatementSyntax ifStatement)
+            {
+                newRoot = oldRoot?.RemoveNode(ifStatement, SyntaxRemoveOptions.KeepNoTrivia);
+            }
 
-            // Return the new solution with the now-uppercase type name.
-            return newSolution;
+            if (expression != null && expression.IsLogicalOrParent())
+            {
+                if (expression.Kind() is SyntaxKind.EqualsExpression)
+                {
+                    var secondExpression = expression?.Parent?.DescendantNodes().OfType<ExpressionSyntax>().FirstOrDefault(node => node?.Parent == expression.Parent && node != expression);
+                    newRoot = oldRoot?.ReplaceNode(expression.Parent, secondExpression);
+                    //newRoot = oldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression));
+                }
+
+                if (expression.Kind() is SyntaxKind.NotEqualsExpression)
+                {
+                    newRoot = oldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
+                }
+            }
+
+            if (expression?.Parent is EqualsValueClauseSyntax)
+            {
+                if (expression.Kind() is SyntaxKind.EqualsExpression)
+                {
+                    newRoot = oldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression));
+                }
+
+                if (expression.Kind() is SyntaxKind.NotEqualsExpression)
+                {
+                    newRoot = oldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
+                }
+            }
+
+            return newRoot == null ? document : document.WithSyntaxRoot(newRoot);
         }
     }
 }
