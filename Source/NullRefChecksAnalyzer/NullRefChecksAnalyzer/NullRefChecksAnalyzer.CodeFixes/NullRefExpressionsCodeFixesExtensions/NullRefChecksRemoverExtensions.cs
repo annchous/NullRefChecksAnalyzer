@@ -6,7 +6,7 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixesExtensions
 {
     public static class NullRefChecksRemoverExtensions
     {
-        public static bool IsDirectIfStatementDescendant(this SyntaxNode node) =>
+        public static bool IsIfStatementParent(this SyntaxNode node) =>
             node?.Parent is IfStatementSyntax;
 
         public static bool IsLogicalOrParent(this SyntaxNode node) =>

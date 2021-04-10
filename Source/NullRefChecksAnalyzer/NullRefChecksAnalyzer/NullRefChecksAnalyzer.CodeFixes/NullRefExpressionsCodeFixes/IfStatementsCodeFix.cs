@@ -15,9 +15,9 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
 
         public override Document GetFixedDocument(SyntaxNode expression)
         {
-            if (expression?.Parent is IfStatementSyntax ifStatement)
+            if (expression.IsIfStatementParent())
             {
-                NewRoot = OldRoot?.RemoveNode(ifStatement, SyntaxRemoveOptions.KeepNoTrivia);
+                NewRoot = OldRoot?.RemoveNode(expression?.Parent, SyntaxRemoveOptions.KeepNoTrivia);
             }
 
             if (expression.IsLogicalOrParent() || expression.IsLogicalAndParent())
