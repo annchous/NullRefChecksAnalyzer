@@ -15,8 +15,7 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
             {
                 NewRoot = OldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression));
             }
-
-            if (expression.Kind() is SyntaxKind.NotEqualsExpression)
+            else if (expression.Kind() is SyntaxKind.NotEqualsExpression)
             {
                 NewRoot = OldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
             }

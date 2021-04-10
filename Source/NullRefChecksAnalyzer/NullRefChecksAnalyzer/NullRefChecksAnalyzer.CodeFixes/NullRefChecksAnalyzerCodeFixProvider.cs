@@ -27,7 +27,6 @@ namespace NullRefChecksAnalyzer
 
         public sealed override FixAllProvider GetFixAllProvider()
         {
-            // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/FixAllProvider.md for more information on Fix All Providers
             return WellKnownFixAllProviders.BatchFixer;
         }
 
@@ -35,15 +34,12 @@ namespace NullRefChecksAnalyzer
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
-            // TODO: Replace the following code with your own analysis, generating a CodeAction for each fix to suggest
             var diagnostic = context.Diagnostics.First();
             var diagnosticSpan = diagnostic.Location.SourceSpan;
 
-            // Find the type declaration identified by the diagnostic.
             var expression = root?.FindToken(diagnosticSpan.Start).Parent?.AncestorsAndSelf().ToList()
                 .FindExpression();
 
-            // Register a code action that will invoke the fix.
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title: "Remove redundant check",
@@ -62,18 +58,15 @@ namespace NullRefChecksAnalyzer
             {
                 newDocument = new IfStatementsCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
-
-            if (expression.AncestorsAndSelf().Any(node => node is EqualsValueClauseSyntax))
+            else if (expression.AncestorsAndSelf().Any(node => node is EqualsValueClauseSyntax))
             {
                 newDocument = new EqualsValueClauseCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
-
-            if (expression.AncestorsAndSelf().Any(node => node is ConditionalAccessExpressionSyntax))
+            else if (expression.AncestorsAndSelf().Any(node => node is ConditionalAccessExpressionSyntax))
             {
                 newDocument = new ConditionalAccessCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
-
-            if (expression.AncestorsAndSelf().Any(node => node is SwitchStatementSyntax))
+            else if (expression.AncestorsAndSelf().Any(node => node is SwitchStatementSyntax))
             {
                 newDocument = new SwitchStatementCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
