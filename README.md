@@ -26,6 +26,7 @@ class Program
             string[] args = new string[] { };
             if (args == null) { } // no warning
         }
+        
         static void Main(string[] args, int c)
         {
             if (c == null) { } // no warning
@@ -73,11 +74,52 @@ class Program
 
 Examples of covered changes provided by code fix:
 
+Simple if-statement:
 ```diff
 static void Main(string[] args, int c)
-        {
-            if (c == null) { }
--            if (args == null) { }
-        }
-    }
+{
+    if (c == null) { }
+-   if (args == null) { }
+}
+```
+Composite if-statement:
+```diff
+static void Main(string[] args, int c)
+{
+-   if (args == null || c == 1)
++   if (c == 1) { }
+}
+```
+```diff
+static void Main(string[] args, int c)
+{
+    // 1st fix
+-   if (!(args == null) || args == null && c == 1)
++   if (args != null && c == 1) { }
+    // 2nd fix
+-   if (args == null && c == 1)
++   if (c == 1) { }
+}
+```
+Switch statement:
+```diff
+switch (args)
+{
+-    case null: // warning
+-        break;
+     default:
+         break;
+}
+```
+Conditional access expression:
+```diff
+-   args?.ToString();
++   args.ToString();
+```
+Equals value clause expressions:
+```diff
+-   var z = args == null;
+-   var w = args != null;
++   var z = false;
++   var w = true;
 ```
