@@ -68,6 +68,11 @@ namespace NullRefChecksAnalyzer
                 newDocument = new EqualsValueClauseCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
 
+            if (expression.AncestorsAndSelf().Any(node => node is ConditionalAccessExpressionSyntax))
+            {
+                newDocument = new ConditionalAccessCodeFix(document, oldRoot, null).GetFixedDocument(expression);
+            }
+
             return newDocument;
         }
     }
