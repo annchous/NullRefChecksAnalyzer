@@ -44,39 +44,27 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
             }
             else if (expression.IsLogicalNotParent() || expression.IsParenthesizedParent())
             {
-                var parent = expression?.Ancestors().FirstOrDefault(node =>
-                    node.Kind() is SyntaxKind.LogicalOrExpression || node.Kind() is SyntaxKind.LogicalAndExpression ||
-                    node.Kind() is SyntaxKind.IfStatement);
-
-                if (parent is null)
+                var notSimplifier = new LogicalNotSimplifier(expression);
+                if (notSimplifier.Simplify())
                 {
-                    return Document;
-                }
-
-                if (expression.Kind() is SyntaxKind.EqualsExpression)
-                {
-                    var parentExpression = expression.Ancestors().FirstOrDefault(node => node.Kind() is SyntaxKind.LogicalNotExpression);
-                    var secondExpression = parentExpression?.Parent?.DescendantNodes().OfType<ExpressionSyntax>()
-                        .FirstOrDefault(node => node.Parent == parentExpression.Parent && node != parentExpression);
-
-                    if (secondExpression is null)
+                    if ((expression?.Kind() is SyntaxKind.EqualsExpression && notSimplifier.LogicalNotExpressionsCount % 2 == 0) ||
+                        (expression?.Kind() is SyntaxKind.NotEqualsExpression && notSimplifier.LogicalNotExpressionsCount % 2 != 0))
                     {
-                        return Document;
+                        var secondExpression = notSimplifier.ResultExpression?.Parent?.DescendantNodes().OfType<ExpressionSyntax>()
+                            .FirstOrDefault(node => node.Parent == notSimplifier.ResultExpression.Parent && node != notSimplifier.ResultExpression);
+
+                        if (secondExpression is null)
+                        {
+                            NewRoot = OldRoot?.RemoveNode(notSimplifier.ResultExpression.Parent, SyntaxRemoveOptions.KeepNoTrivia);
+                            return NewRoot == null ? Document : Document.WithSyntaxRoot(NewRoot);
+                        }
+
+                        NewRoot = OldRoot?.ReplaceNode(notSimplifier.ResultExpression.Parent, secondExpression);
                     }
-
-                    NewRoot = OldRoot?.ReplaceNode(parent, secondExpression);
-                }
-                else if (expression.Kind() is SyntaxKind.NotEqualsExpression)
-                {
-                    var secondExpression = parent?.DescendantNodes().OfType<ExpressionSyntax>()
-                        .FirstOrDefault(node => node.Parent == expression.Parent && node != expression);
-
-                    if (expression.Parent is null || secondExpression is null)
+                    else
                     {
-                        return Document;
+                        NewRoot = OldRoot?.ReplaceNode(notSimplifier.ResultExpression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression).NormalizeWhitespace());
                     }
-
-                    NewRoot = OldRoot?.ReplaceNode(expression.Parent, secondExpression);
                 }
             }
 
