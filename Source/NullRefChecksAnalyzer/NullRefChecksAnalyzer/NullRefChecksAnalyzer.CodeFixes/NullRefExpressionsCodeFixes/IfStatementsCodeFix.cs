@@ -19,12 +19,20 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
             if (expression.IsIfStatementParent())
             {
                 var ifStatement = expression?.Parent;
+
                 if (ifStatement is null)
                 {
                     return Document;
                 }
 
-                NewRoot = OldRoot?.RemoveNode(ifStatement, SyntaxRemoveOptions.KeepNoTrivia);
+                if (expression.Kind() is SyntaxKind.EqualsExpression)
+                {
+                    NewRoot = OldRoot?.RemoveNode(ifStatement, SyntaxRemoveOptions.KeepNoTrivia);
+                }
+                else if (expression.Kind() is SyntaxKind.NotEqualsExpression)
+                {
+                    NewRoot = OldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
+                }
             }
             else if (expression.AncestorsAndSelf().Any(node => node.Kind() is SyntaxKind.LogicalOrExpression))
             {
