@@ -37,5 +37,7 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixesExtensions
         public static bool IsInvocation(this SyntaxNode node) => node.DescendantNodes()
             .OfType<IdentifierNameSyntax>()
             .Any(identifierName => identifierName.Identifier.ToString() == "ReferenceEquals");
+
+        public static bool IsPattern(this SyntaxNode node) => node.Kind() is SyntaxKind.IsPatternExpression;
     }
 }

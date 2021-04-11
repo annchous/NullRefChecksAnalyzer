@@ -16,25 +16,7 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
 
         public override Document GetFixedDocument(SyntaxNode expression)
         {
-            if (expression.IsIfStatementParent())
-            {
-                var ifStatement = expression?.Parent;
-
-                if (ifStatement is null)
-                {
-                    return Document;
-                }
-
-                if (expression.Kind() is SyntaxKind.EqualsExpression)
-                {
-                    NewRoot = OldRoot?.RemoveNode(ifStatement, SyntaxRemoveOptions.KeepNoTrivia);
-                }
-                else if (expression.Kind() is SyntaxKind.NotEqualsExpression)
-                {
-                    NewRoot = OldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
-                }
-            }
-            else if (expression.AncestorsAndSelf().Any(node => node.Kind() is SyntaxKind.LogicalOrExpression))
+            if (expression.Parent?.Kind() is SyntaxKind.LogicalOrExpression)
             {
                 var orSimplifier = new LogicalOrSimplifier(expression);
                 if (orSimplifier.Simplify())
@@ -42,7 +24,7 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
                     NewRoot = OldRoot?.ReplaceNode(orSimplifier.ParentExpression, orSimplifier.ResultExpression.NormalizeWhitespace());
                 }
             }
-            else if (expression.AncestorsAndSelf().Any(node => node.Kind() is SyntaxKind.LogicalAndExpression))
+            else if (expression.Parent?.Kind() is SyntaxKind.LogicalAndExpression)
             {
                 var andSimplifier = new LogicalAndSimplifier(expression);
                 if (andSimplifier.Simplify())
@@ -72,6 +54,42 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
                     else
                     {
                         NewRoot = OldRoot?.ReplaceNode(notSimplifier.ResultExpression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression).NormalizeWhitespace());
+                    }
+                }
+            }
+            else if (expression.IsPattern())
+            {
+                var isPatternSimplifier = new IsPatternSimplifier(expression);
+                if (isPatternSimplifier.Simplify())
+                {
+                    NewRoot = OldRoot?.ReplaceNode(isPatternSimplifier.ParentExpression,
+                        isPatternSimplifier.ResultExpression.NormalizeWhitespace());
+                }
+            }
+            else if (expression.IsIfStatementParent())
+            {
+                var ifStatement = expression?.Parent;
+
+                if (ifStatement is null)
+                {
+                    return Document;
+                }
+
+                if (expression.Kind() is SyntaxKind.EqualsExpression)
+                {
+                    NewRoot = OldRoot?.RemoveNode(ifStatement, SyntaxRemoveOptions.KeepNoTrivia);
+                }
+                else if (expression.Kind() is SyntaxKind.NotEqualsExpression)
+                {
+                    NewRoot = OldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
+                }
+                else if (expression.IsPattern())
+                {
+                    var isPatternSimplifier = new IsPatternSimplifier(expression);
+                    if (isPatternSimplifier.Simplify())
+                    {
+                        NewRoot = OldRoot?.ReplaceNode(isPatternSimplifier.ParentExpression,
+                            isPatternSimplifier.ResultExpression.NormalizeWhitespace());
                     }
                 }
             }

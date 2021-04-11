@@ -39,6 +39,14 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsSimplifiers
 
                 ResultExpression = secondExpression;
             }
+            else if (Expression?.Kind() is SyntaxKind.IsPatternExpression)
+            {
+                var isPatternSimplifier = new IsPatternSimplifier(Expression);
+                if (isPatternSimplifier.Simplify())
+                {
+                    ResultExpression = isPatternSimplifier.ResultExpression;
+                }
+            }
             else
             {
                 ResultExpression = ReplaceWithTrueExpression();
