@@ -24,6 +24,10 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
             {
                 return new CoalesceAssignmentCodeFix(Document, OldRoot, null).GetFixedDocument(expression);
             }
+            else if (expression.IsInvocation())
+            {
+                return new InvocationCodeFix(Document, OldRoot, NewRoot).GetFixedDocument(expression);
+            }
 
             return NewRoot == null ? Document : Document.WithSyntaxRoot(NewRoot);
         }
