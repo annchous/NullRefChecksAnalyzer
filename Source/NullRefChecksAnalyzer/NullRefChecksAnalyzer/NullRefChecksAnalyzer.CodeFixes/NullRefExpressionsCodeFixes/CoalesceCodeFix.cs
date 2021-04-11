@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using NullRefChecksAnalyzer.NullRefExpressionsCodeFixesExtensions;
 
@@ -20,6 +21,17 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
                 }
 
                 NewRoot = OldRoot?.RemoveNode(expression.Parent, SyntaxRemoveOptions.KeepNoTrivia);
+            }
+            else
+            {
+                var leftPart = expression.ToFullString().Split(new string[] { "??" }, StringSplitOptions.None)[0].Trim();
+                if (string.IsNullOrEmpty(leftPart))
+                {
+                    return Document;
+                }
+
+                var newExpression = SyntaxFactory.ParseExpression(leftPart);
+                NewRoot = OldRoot?.ReplaceNode(expression, newExpression);
             }
 
             return NewRoot == null ? Document : Document.WithSyntaxRoot(NewRoot);

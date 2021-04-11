@@ -23,6 +23,16 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
                         ? SyntaxKind.FalseLiteralExpression
                         : SyntaxKind.TrueLiteralExpression));
             }
+            else if (expression.IsNoParent())
+            {
+                var parentSyntax = expression.Parent;
+                if (parentSyntax is null)
+                {
+                    return Document;
+                }
+
+                NewRoot = OldRoot?.RemoveNode(parentSyntax, SyntaxRemoveOptions.KeepNoTrivia);
+            }
             else
             {
                 NewRoot = OldRoot?.ReplaceNode(expression,

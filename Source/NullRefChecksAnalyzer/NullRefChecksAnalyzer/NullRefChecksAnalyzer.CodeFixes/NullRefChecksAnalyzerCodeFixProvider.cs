@@ -58,6 +58,14 @@ namespace NullRefChecksAnalyzer
             {
                 newDocument = new ConditionalAccessCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
+            else if (expression.AncestorsAndSelf().Any(node => node.Kind() is SyntaxKind.CoalesceAssignmentExpression))
+            {
+                newDocument = new CoalesceAssignmentCodeFix(document, oldRoot, null).GetFixedDocument(expression);
+            }
+            else if (expression.AncestorsAndSelf().Any(node => node.Kind() is SyntaxKind.CoalesceExpression))
+            {
+                newDocument = new CoalesceCodeFix(document, oldRoot, null).GetFixedDocument(expression);
+            }
             else if (expression.AncestorsAndSelf().Any(node => node is IfStatementSyntax))
             {
                 newDocument = new IfStatementsCodeFix(document, oldRoot, null).GetFixedDocument(expression);
@@ -70,13 +78,13 @@ namespace NullRefChecksAnalyzer
             {
                 newDocument = new SwitchStatementCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
-            else if (expression.AncestorsAndSelf().Any(node => node.Kind() is SyntaxKind.CoalesceAssignmentExpression))
+            else if (expression is BinaryExpressionSyntax)
             {
-                newDocument = new CoalesceAssignmentCodeFix(document, oldRoot, null).GetFixedDocument(expression);
+                newDocument = new BinaryCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
-            else if (expression.AncestorsAndSelf().Any(node => node.Kind() is SyntaxKind.CoalesceExpression))
+            else if (expression is InvocationExpressionSyntax)
             {
-                newDocument = new CoalesceCodeFix(document, oldRoot, null).GetFixedDocument(expression);
+                newDocument = new InvocationCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
 
             return newDocument ?? document;

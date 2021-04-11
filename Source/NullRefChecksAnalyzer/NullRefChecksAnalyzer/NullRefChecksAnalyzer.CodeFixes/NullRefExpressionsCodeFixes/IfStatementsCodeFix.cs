@@ -16,7 +16,7 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
 
         public override Document GetFixedDocument(SyntaxNode expression)
         {
-            if (expression.Parent?.Kind() is SyntaxKind.LogicalOrExpression)
+            if (expression.IsLogicalOrParent())
             {
                 var orSimplifier = new LogicalOrSimplifier(expression);
                 if (orSimplifier.Simplify())
@@ -24,7 +24,7 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
                     NewRoot = OldRoot?.ReplaceNode(orSimplifier.ParentExpression, orSimplifier.ResultExpression.NormalizeWhitespace());
                 }
             }
-            else if (expression.Parent?.Kind() is SyntaxKind.LogicalAndExpression)
+            else if (expression.IsLogicalAndParent())
             {
                 var andSimplifier = new LogicalAndSimplifier(expression);
                 if (andSimplifier.Simplify())
@@ -66,6 +66,14 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
                         isPatternSimplifier.ResultExpression.NormalizeWhitespace());
                 }
             }
+            else if (expression.IsConditionalAccessParent())
+            {
+                return new ConditionalAccessCodeFix(Document, OldRoot, NewRoot).GetFixedDocument(expression);
+            }
+            else if (expression.IsInvocation())
+            {
+                return new InvocationCodeFix(Document, OldRoot, NewRoot).GetFixedDocument(expression);
+            }
             else if (expression.IsIfStatementParent())
             {
                 var ifStatement = expression?.Parent;
@@ -82,15 +90,6 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
                 else if (expression.Kind() is SyntaxKind.NotEqualsExpression)
                 {
                     NewRoot = OldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
-                }
-                else if (expression.IsPattern())
-                {
-                    var isPatternSimplifier = new IsPatternSimplifier(expression);
-                    if (isPatternSimplifier.Simplify())
-                    {
-                        NewRoot = OldRoot?.ReplaceNode(isPatternSimplifier.ParentExpression,
-                            isPatternSimplifier.ResultExpression.NormalizeWhitespace());
-                    }
                 }
             }
 
