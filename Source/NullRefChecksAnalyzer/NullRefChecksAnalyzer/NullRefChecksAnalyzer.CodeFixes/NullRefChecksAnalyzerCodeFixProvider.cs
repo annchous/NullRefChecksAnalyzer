@@ -54,17 +54,17 @@ namespace NullRefChecksAnalyzer
             SyntaxNode oldRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             Document newDocument = null;
 
-            if (expression.AncestorsAndSelf().Any(node => node is IfStatementSyntax))
+            if (expression.AncestorsAndSelf().Any(node => node is ConditionalAccessExpressionSyntax))
+            {
+                newDocument = new ConditionalAccessCodeFix(document, oldRoot, null).GetFixedDocument(expression);
+            }
+            else if (expression.AncestorsAndSelf().Any(node => node is IfStatementSyntax))
             {
                 newDocument = new IfStatementsCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
             else if (expression.AncestorsAndSelf().Any(node => node is EqualsValueClauseSyntax))
             {
                 newDocument = new EqualsValueClauseCodeFix(document, oldRoot, null).GetFixedDocument(expression);
-            }
-            else if (expression.AncestorsAndSelf().Any(node => node is ConditionalAccessExpressionSyntax))
-            {
-                newDocument = new ConditionalAccessCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
             else if (expression.AncestorsAndSelf().Any(node => node is SwitchStatementSyntax))
             {
