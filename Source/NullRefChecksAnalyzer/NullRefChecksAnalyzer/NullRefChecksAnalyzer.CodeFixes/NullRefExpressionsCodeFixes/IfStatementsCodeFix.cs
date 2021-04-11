@@ -47,8 +47,8 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
                 var notSimplifier = new LogicalNotSimplifier(expression);
                 if (notSimplifier.Simplify())
                 {
-                    if ((expression?.Kind() is SyntaxKind.EqualsExpression && notSimplifier.LogicalNotExpressionsCount % 2 == 0) ||
-                        (expression?.Kind() is SyntaxKind.NotEqualsExpression && notSimplifier.LogicalNotExpressionsCount % 2 != 0))
+                    if ((expression.Kind() is SyntaxKind.EqualsExpression && notSimplifier.LogicalNotExpressionsCount % 2 == 0) ||
+                        (expression.Kind() is SyntaxKind.NotEqualsExpression && notSimplifier.LogicalNotExpressionsCount % 2 != 0))
                     {
                         var secondExpression = notSimplifier.ResultExpression?.Parent?.DescendantNodes().OfType<ExpressionSyntax>()
                             .FirstOrDefault(node => node.Parent == notSimplifier.ResultExpression.Parent && node != notSimplifier.ResultExpression);
