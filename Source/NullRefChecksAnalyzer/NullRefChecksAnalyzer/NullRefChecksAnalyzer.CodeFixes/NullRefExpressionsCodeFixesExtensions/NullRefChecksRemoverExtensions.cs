@@ -21,5 +21,14 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixesExtensions
 
         public static bool IsConditionalAccessParent(this SyntaxNode node) =>
             node?.Parent is ConditionalAccessExpressionSyntax;
+
+        public static bool IsCoalesceAssignmentParent(this SyntaxNode node) =>
+            node?.Parent?.Kind() is SyntaxKind.CoalesceAssignmentExpression;
+
+        public static bool IsEqualsValueClauseParent(this SyntaxNode node) =>
+            node?.Parent?.Kind() is SyntaxKind.EqualsValueClause;
+
+        public static bool IsNoParent(this SyntaxNode node) =>
+            node?.Parent?.Kind() is SyntaxKind.ExpressionStatement;
     }
 }

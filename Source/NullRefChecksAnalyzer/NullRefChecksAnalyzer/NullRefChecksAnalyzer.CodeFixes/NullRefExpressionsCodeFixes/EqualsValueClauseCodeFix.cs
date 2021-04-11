@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using NullRefChecksAnalyzer.NullRefExpressionsCodeFixesExtensions;
 
 namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
 {
@@ -18,6 +19,10 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
             else if (expression.Kind() is SyntaxKind.NotEqualsExpression)
             {
                 NewRoot = OldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
+            }
+            else if (expression.Kind() is SyntaxKind.CoalesceAssignmentExpression)
+            {
+                return new CoalesceAssignmentCodeFix(Document, OldRoot, null).GetFixedDocument(expression);
             }
 
             return NewRoot == null ? Document : Document.WithSyntaxRoot(NewRoot);

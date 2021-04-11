@@ -17,7 +17,13 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
         {
             if (expression.IsIfStatementParent())
             {
-                NewRoot = OldRoot?.RemoveNode(expression?.Parent, SyntaxRemoveOptions.KeepNoTrivia);
+                var ifStatement = expression?.Parent;
+                if (ifStatement is null)
+                {
+                    return Document;
+                }
+
+                NewRoot = OldRoot?.RemoveNode(ifStatement, SyntaxRemoveOptions.KeepNoTrivia);
             }
             else if (expression.IsLogicalOrParent() || expression.IsLogicalAndParent())
             {
@@ -25,10 +31,12 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
                 {
                     var secondExpression = expression.Parent?.DescendantNodes().OfType<ExpressionSyntax>()
                         .FirstOrDefault(node => node.Parent == expression.Parent && node != expression);
-                    if (secondExpression != null)
+                    if (secondExpression is null)
                     {
-                        NewRoot = OldRoot?.ReplaceNode(expression.Parent, secondExpression);
+                        return Document;
                     }
+
+                    NewRoot = OldRoot?.ReplaceNode(expression.Parent, secondExpression);
                 }
                 else if (expression?.Kind() is SyntaxKind.NotEqualsExpression)
                 {
@@ -41,22 +49,35 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
                     node.Kind() is SyntaxKind.LogicalOrExpression || node.Kind() is SyntaxKind.LogicalAndExpression ||
                     node.Kind() is SyntaxKind.IfStatement);
 
-                if (expression?.Kind() is SyntaxKind.EqualsExpression)
+                if (parent is null)
                 {
-                    var parentExpression = expression?.Ancestors().FirstOrDefault(node =>
-                        node.Kind() is SyntaxKind.LogicalNotExpression);
+                    return Document;
+                }
+
+                if (expression.Kind() is SyntaxKind.EqualsExpression)
+                {
+                    var parentExpression = expression.Ancestors().FirstOrDefault(node => node.Kind() is SyntaxKind.LogicalNotExpression);
                     var secondExpression = parentExpression?.Parent?.DescendantNodes().OfType<ExpressionSyntax>()
                         .FirstOrDefault(node => node.Parent == parentExpression.Parent && node != parentExpression);
+
+                    if (secondExpression is null)
+                    {
+                        return Document;
+                    }
+
                     NewRoot = OldRoot?.ReplaceNode(parent, secondExpression);
                 }
-                else if (expression?.Kind() is SyntaxKind.NotEqualsExpression)
+                else if (expression.Kind() is SyntaxKind.NotEqualsExpression)
                 {
                     var secondExpression = parent?.DescendantNodes().OfType<ExpressionSyntax>()
                         .FirstOrDefault(node => node.Parent == expression.Parent && node != expression);
-                    if (secondExpression != null)
+
+                    if (expression.Parent is null || secondExpression is null)
                     {
-                        NewRoot = OldRoot?.ReplaceNode(expression.Parent, secondExpression);
+                        return Document;
                     }
+
+                    NewRoot = OldRoot?.ReplaceNode(expression.Parent, secondExpression);
                 }
             }
 

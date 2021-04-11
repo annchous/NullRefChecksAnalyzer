@@ -70,8 +70,16 @@ namespace NullRefChecksAnalyzer
             {
                 newDocument = new SwitchStatementCodeFix(document, oldRoot, null).GetFixedDocument(expression);
             }
+            else if (expression.AncestorsAndSelf().Any(node => node.Kind() is SyntaxKind.CoalesceAssignmentExpression))
+            {
+                newDocument = new CoalesceAssignmentCodeFix(document, oldRoot, null).GetFixedDocument(expression);
+            }
+            else if (expression.AncestorsAndSelf().Any(node => node.Kind() is SyntaxKind.CoalesceExpression))
+            {
+                newDocument = new CoalesceCodeFix(document, oldRoot, null).GetFixedDocument(expression);
+            }
 
-            return newDocument;
+            return newDocument ?? document;
         }
     }
 }

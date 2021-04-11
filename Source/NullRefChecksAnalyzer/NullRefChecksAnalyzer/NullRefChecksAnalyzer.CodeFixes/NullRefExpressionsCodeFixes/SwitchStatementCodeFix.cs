@@ -13,6 +13,10 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
         {
             var caseSwitchLabel = expression as CaseSwitchLabelSyntax;
             var switchSection = caseSwitchLabel?.Parent;
+            if (switchSection is null)
+            {
+                return Document;
+            }
 
             NewRoot = OldRoot?.RemoveNode(switchSection, SyntaxRemoveOptions.KeepNoTrivia);
 
