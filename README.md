@@ -21,7 +21,7 @@ class Program
 
         public Program(string a, string b)
         {
-            if (b == null || !(a == null) && b == "a") { } // warning on    the 1st and 2nd expression
+            if (b == null || !(a == null) && b == "a") { } // warning on the 1st and 2nd expression
             if (a != null || a == "a") { } // warning on the 1st expression
             string[] args = new string[] { };
             if (args == null) { } // no warning
@@ -29,7 +29,7 @@ class Program
         
         static void Main(string[] args, int c)
         {
-            if (c == null) { } // no warning
+            if (c == null) { } // no warning because of non-reference parameter type
             if (args == null) { } // warning
             if (!(args == null)) { } // warning
             else if (c == 1) { } // no warning
@@ -38,7 +38,7 @@ class Program
             if (args is null) { } // warning
             if (args is { }) { } // warning
             if (args is null or { }) { } // warning
-            if (args is not null or null || c == 1) { }  // warning on the 1st expression
+            if (args is not null or null || c == 1) { } // warning on the 1st expression
             if (args.Equals(null)) { } // warning
             if (args.Equals(default)) { } // warning
             if (ReferenceEquals(args, null)) { } // warning
@@ -105,7 +105,7 @@ Switch statement:
 ```diff
 switch (args)
 {
--    case null: // warning
+-    case null:
 -        break;
      default:
          break;
