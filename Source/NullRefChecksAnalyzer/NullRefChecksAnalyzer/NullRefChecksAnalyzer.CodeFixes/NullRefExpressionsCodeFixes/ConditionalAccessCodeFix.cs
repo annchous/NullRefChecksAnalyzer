@@ -13,8 +13,13 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
         public override Document GetFixedDocument(SyntaxNode expression)
         {
             var conditionalAccessExpression = expression as ConditionalAccessExpressionSyntax;
-            var leftExpression = conditionalAccessExpression?.Expression.ToFullString();
-            var rightExpression = conditionalAccessExpression?.WhenNotNull.ToFullString();
+            if (conditionalAccessExpression is null)
+            {
+                return Document;
+            }
+
+            var leftExpression = conditionalAccessExpression.Expression.ToFullString();
+            var rightExpression = conditionalAccessExpression.WhenNotNull.ToFullString();
 
             NewRoot = OldRoot?.ReplaceNode(conditionalAccessExpression,
                 SyntaxFactory.ParseExpression(leftExpression + rightExpression));

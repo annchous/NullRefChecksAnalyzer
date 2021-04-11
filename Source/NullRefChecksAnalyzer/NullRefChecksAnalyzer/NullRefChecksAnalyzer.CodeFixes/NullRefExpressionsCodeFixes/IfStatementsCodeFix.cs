@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using NullRefChecksAnalyzer.NullRefExpressionsCodeFixesExtensions;
+using NullRefChecksAnalyzer.NullRefExpressionsSimplifiers;
 
 namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
 {
@@ -15,52 +16,80 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
 
         public override Document GetFixedDocument(SyntaxNode expression)
         {
-            if (expression.IsIfStatementParent())
+            if (expression.IsLogicalOrParent())
             {
-                NewRoot = OldRoot?.RemoveNode(expression?.Parent, SyntaxRemoveOptions.KeepNoTrivia);
-            }
-
-            if (expression.IsLogicalOrParent() || expression.IsLogicalAndParent())
-            {
-                if (expression?.Kind() is SyntaxKind.EqualsExpression)
+                var orSimplifier = new LogicalOrSimplifier(expression);
+                if (orSimplifier.Simplify())
                 {
-                    var secondExpression = expression.Parent?.DescendantNodes().OfType<ExpressionSyntax>()
-                        .FirstOrDefault(node => node.Parent == expression.Parent && node != expression);
-                    if (secondExpression != null)
+                    NewRoot = OldRoot?.ReplaceNode(orSimplifier.ParentExpression, orSimplifier.ResultExpression.NormalizeWhitespace());
+                }
+            }
+            else if (expression.IsLogicalAndParent())
+            {
+                var andSimplifier = new LogicalAndSimplifier(expression);
+                if (andSimplifier.Simplify())
+                {
+                    NewRoot = OldRoot?.ReplaceNode(andSimplifier.ParentExpression, andSimplifier.ResultExpression.NormalizeWhitespace());
+                }
+            }
+            else if (expression.IsLogicalNotParent() || expression.IsParenthesizedParent())
+            {
+                var notSimplifier = new LogicalNotSimplifier(expression);
+                if (notSimplifier.Simplify())
+                {
+                    if ((expression.Kind() is SyntaxKind.EqualsExpression && notSimplifier.LogicalNotExpressionsCount % 2 == 0) ||
+                        (expression.Kind() is SyntaxKind.NotEqualsExpression && notSimplifier.LogicalNotExpressionsCount % 2 != 0))
                     {
-                        NewRoot = OldRoot?.ReplaceNode(expression.Parent, secondExpression);
+                        var secondExpression = notSimplifier.ResultExpression?.Parent?.DescendantNodes().OfType<ExpressionSyntax>()
+                            .FirstOrDefault(node => node.Parent == notSimplifier.ResultExpression.Parent && node != notSimplifier.ResultExpression);
+
+                        if (secondExpression is null)
+                        {
+                            NewRoot = OldRoot?.RemoveNode(notSimplifier.ResultExpression.Parent, SyntaxRemoveOptions.KeepNoTrivia);
+                            return NewRoot == null ? Document : Document.WithSyntaxRoot(NewRoot);
+                        }
+
+                        NewRoot = OldRoot?.ReplaceNode(notSimplifier.ResultExpression.Parent, secondExpression);
+                    }
+                    else
+                    {
+                        NewRoot = OldRoot?.ReplaceNode(notSimplifier.ResultExpression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression).NormalizeWhitespace());
                     }
                 }
+            }
+            else if (expression.IsPattern())
+            {
+                var isPatternSimplifier = new IsPatternSimplifier(expression);
+                if (isPatternSimplifier.Simplify())
+                {
+                    NewRoot = OldRoot?.ReplaceNode(isPatternSimplifier.ParentExpression,
+                        isPatternSimplifier.ResultExpression.NormalizeWhitespace());
+                }
+            }
+            else if (expression.IsConditionalAccessParent())
+            {
+                return new ConditionalAccessCodeFix(Document, OldRoot, NewRoot).GetFixedDocument(expression);
+            }
+            else if (expression.IsInvocation())
+            {
+                return new InvocationCodeFix(Document, OldRoot, NewRoot).GetFixedDocument(expression);
+            }
+            else if (expression.IsIfStatementParent())
+            {
+                var ifStatement = expression?.Parent;
 
-                if (expression?.Kind() is SyntaxKind.NotEqualsExpression)
+                if (ifStatement is null)
+                {
+                    return Document;
+                }
+
+                if (expression.Kind() is SyntaxKind.EqualsExpression)
+                {
+                    NewRoot = OldRoot?.RemoveNode(ifStatement, SyntaxRemoveOptions.KeepNoTrivia);
+                }
+                else if (expression.Kind() is SyntaxKind.NotEqualsExpression)
                 {
                     NewRoot = OldRoot?.ReplaceNode(expression, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
-                }
-            }
-
-            if (expression.IsLogicalNotParent())
-            {
-                var parent = expression?.Ancestors().FirstOrDefault(node =>
-                    node.Kind() is SyntaxKind.LogicalOrExpression || node.Kind() is SyntaxKind.LogicalAndExpression ||
-                    node.Kind() is SyntaxKind.IfStatement);
-
-                if (expression?.Kind() is SyntaxKind.EqualsExpression)
-                {
-                    var parentExpression = expression?.Ancestors().FirstOrDefault(node =>
-                        node.Kind() is SyntaxKind.LogicalNotExpression);
-                    var secondExpression = parentExpression?.Parent?.DescendantNodes().OfType<ExpressionSyntax>()
-                        .FirstOrDefault(node => node.Parent == parentExpression.Parent && node != parentExpression);
-                    NewRoot = OldRoot?.ReplaceNode(parent, secondExpression);
-                }
-
-                if (expression?.Kind() is SyntaxKind.NotEqualsExpression)
-                {
-                    var secondExpression = parent?.DescendantNodes().OfType<ExpressionSyntax>()
-                        .FirstOrDefault(node => node.Parent == expression.Parent && node != expression);
-                    if (secondExpression != null)
-                    {
-                        NewRoot = OldRoot?.ReplaceNode(expression.Parent, secondExpression);
-                    }
                 }
             }
 

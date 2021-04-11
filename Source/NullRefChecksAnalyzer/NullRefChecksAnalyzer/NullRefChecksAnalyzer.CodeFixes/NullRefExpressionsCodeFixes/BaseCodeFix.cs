@@ -5,11 +5,11 @@ namespace NullRefChecksAnalyzer.NullRefExpressionsCodeFixes
 {
     public abstract class BaseCodeFix
     {
-        protected Document Document;
+        protected readonly Document Document;
         protected readonly SyntaxNode OldRoot;
         protected SyntaxNode NewRoot;
 
-        public BaseCodeFix(Document document, SyntaxNode oldRoot, SyntaxNode newRoot)
+        protected BaseCodeFix(Document document, SyntaxNode oldRoot, SyntaxNode newRoot)
         {
             Document = document;
             OldRoot = oldRoot;

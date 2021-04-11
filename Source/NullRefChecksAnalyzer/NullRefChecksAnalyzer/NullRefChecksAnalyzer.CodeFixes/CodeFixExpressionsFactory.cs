@@ -9,16 +9,6 @@ namespace NullRefChecksAnalyzer
     {
         public static SyntaxNode FindExpression(this List<SyntaxNode> expressions)
         {
-            if (expressions.OfType<BinaryExpressionSyntax>().FirstOrDefault() != null)
-            {
-                return expressions.OfType<BinaryExpressionSyntax>().First();
-            }
-
-            if (expressions.OfType<IsPatternExpressionSyntax>().FirstOrDefault() != null)
-            {
-                return expressions.OfType<IsPatternExpressionSyntax>().First();
-            }
-
             if (expressions.OfType<ConditionalAccessExpressionSyntax>().FirstOrDefault() != null)
             {
                 return expressions.OfType<ConditionalAccessExpressionSyntax>().First();
@@ -27,6 +17,16 @@ namespace NullRefChecksAnalyzer
             if (expressions.OfType<InvocationExpressionSyntax>().FirstOrDefault() != null)
             {
                 return expressions.OfType<InvocationExpressionSyntax>().First();
+            }
+
+            if (expressions.OfType<BinaryExpressionSyntax>().FirstOrDefault() != null)
+            {
+                return expressions.OfType<BinaryExpressionSyntax>().First();
+            }
+
+            if (expressions.OfType<IsPatternExpressionSyntax>().FirstOrDefault() != null)
+            {
+                return expressions.OfType<IsPatternExpressionSyntax>().First();
             }
 
             if (expressions.OfType<CaseSwitchLabelSyntax>().FirstOrDefault() != null)
