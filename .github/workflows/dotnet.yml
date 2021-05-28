@@ -23,6 +23,3 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
       working-directory: Source/NullRefChecksAnalyzer/NullRefChecksAnalyzer/NullRefChecksAnalyzer
-    - name: Build
-      run: dotnet build --no-restore
-      working-directory: Source/NullRefChecksAnalyzer/NullRefChecksAnalyzer/NullRefChecksAnalyzer.CodeFixes
